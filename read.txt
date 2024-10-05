@@ -1,0 +1,30 @@
+import connectDB from '../../../lib/mongodb';
+import User from '../../../models/User';
+import multer from 'multer';
+import nextConnect from 'next-connect';
+
+const upload = multer({
+  storage: multer.memoryStorage(), // Use memory storage for simplicity
+});
+
+const handler = nextConnect();
+
+handler.use(upload.array('files'));
+
+handler.post(async (req, res) => {
+  await connectDB();
+
+  const { location, photo } = req.body;
+  const files = req.files.map(file => file.originalname); // You may want to store these somewhere
+
+  try {
+    const newUser = new User({ location: JSON.parse(location), photo, files });
+    await newUser.save();
+    res.status(201).json({ message: 'Data saved successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error saving data' });
+  }
+});
+
+export default handler;
